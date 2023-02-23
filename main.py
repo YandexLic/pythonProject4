@@ -5,11 +5,11 @@ import pygame
 pygame.init()
 pygame.key.set_repeat(200, 70)
 FPS = 50
-WIDTH = 600
-HEIGHT = 600
+WIDTH = 400
+HEIGHT = 300
 STEP = 10
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
-pygame.display.set_caption('Перемещение героя. Новый уровень')
+pygame.display.set_caption('Перемещение героя')
 clock = pygame.time.Clock()
 player = None
 all_sprites = pygame.sprite.Group()
@@ -94,10 +94,7 @@ class Tile(pygame.sprite.Sprite):
         super().__init__(tiles_group, all_sprites)
         self.tile_type = tile_type
         self.image = tile_images[tile_type]
-        self.rect = self.image.get_rect().move(tile_width * pos_x, tile_height * pos_y)
-
-    def update(self, *args, **kwargs) -> None:
-        pass
+        self.rect = self.image.get_rect().move(tile_width * pos_x - 15, tile_height * pos_y - 5)
 
 
 class Player(pygame.sprite.Sprite):
@@ -105,7 +102,7 @@ class Player(pygame.sprite.Sprite):
     def __init__(self, pos_x, pos_y):
         super().__init__(player_group, all_sprites)
         self.image = player_image
-        self.rect = self.image.get_rect().move(tile_width * pos_x + 15, tile_height * pos_y + 5)
+        self.rect = self.image.get_rect().move(tile_width * pos_x, tile_height * pos_y)
 
     def move(self, dx, dy):
         self.rect.x += dx
@@ -132,17 +129,7 @@ def generate_level(level):
     return new_player, x, y
 
 
-def get_level_from_user():
-    filepath = input('Введите имя файла уровня (относительно текущей папки): ')
-    if not os.path.exists(filepath):
-        print(f'Файл "{filepath}" не существует')
-        sys.exit(1)
-    filepath = os.path.join('..', filepath)
-    level = load_level(filepath)
-    return level
-
-
-player, level_x, level_y = generate_level(get_level_from_user())
+player, level_x, level_y = generate_level(load_level('yroven.txt'))
 
 
 class Camera:
@@ -158,34 +145,6 @@ class Camera:
     def update(self, target: pygame.sprite.Sprite):
         self.dx = -(target.rect.x + target.rect.w // 2 - WIDTH // 2)
         self.dy = -(target.rect.y + target.rect.h // 2 - HEIGHT // 2)
-
-
-def flip_tiles(dx, dy):
-    print(dx, dy)
-    if abs(dx) != tile_width and abs(dy) != tile_height:
-        return
-    top_right_rect = max((i for i in tiles_group if isinstance(i, Tile)),
-                         key=lambda t: (t.rect.x, -t.rect.y)).rect.copy()
-    bottom_left_rect = min((i for i in tiles_group if isinstance(i, Tile)),
-                           key=lambda t: (t.rect.x, -t.rect.y)).rect.copy()
-    for tile in tiles_group:
-        if dx > 0:
-            if tile.rect.right != top_right_rect.right:
-                continue
-            tile.rect.x = bottom_left_rect.x - top_right_rect.width
-        elif dx < 0:
-            if tile.rect.left != bottom_left_rect.left:
-                continue
-            tile.rect.x = top_right_rect.x + bottom_left_rect.width
-    for tile in tiles_group:
-        if dy > 0:
-            if tile.rect.bottom != bottom_left_rect.bottom:
-                continue
-            tile.rect.y = top_right_rect.y - tile.rect.w
-        elif dy < 0:
-            if tile.rect.top != top_right_rect.top:
-                continue
-            tile.rect.y = bottom_left_rect.y + tile.rect.width
 
 
 camera = Camera()
@@ -205,10 +164,6 @@ while running:
                 player.move(0, -tile_height)
             if event.key == pygame.K_DOWN:
                 player.move(0, tile_height)
-    camera.update(player)
-    for sprite in all_sprites:
-        camera.apply(sprite)
-    flip_tiles(camera.dx, camera.dy)
     screen.fill(pygame.Color(0, 0, 0))
     tiles_group.draw(screen)
     player_group.draw(screen)
