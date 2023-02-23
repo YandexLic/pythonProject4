@@ -9,7 +9,7 @@ WIDTH = 400
 HEIGHT = 300
 STEP = 10
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
-pygame.display.set_caption('Перемещение героя')
+pygame.display.set_caption('Перемещение героя. Камера')
 clock = pygame.time.Clock()
 player = None
 all_sprites = pygame.sprite.Group()
@@ -129,7 +129,17 @@ def generate_level(level):
     return new_player, x, y
 
 
-player, level_x, level_y = generate_level(load_level('yroven.txt'))
+def get_level_from_user():
+    filepath = input('Введите имя файла уровня (относительно текущей папки): ')
+    if not os.path.exists(filepath):
+        print(f'Файл "{filepath}" не существует')
+        sys.exit(1)
+    filepath = os.path.join('..', filepath)
+    level = load_level(filepath)
+    return level
+
+
+player, level_x, level_y = generate_level(load_level('yroven3.txt'))
 
 
 class Camera:
@@ -149,6 +159,7 @@ class Camera:
 
 camera = Camera()
 
+# Главный Игровой цикл
 running = True
 while running:
     WIDTH, HEIGHT = pygame.display.get_window_size()
@@ -164,6 +175,11 @@ while running:
                 player.move(0, -tile_height)
             if event.key == pygame.K_DOWN:
                 player.move(0, tile_height)
+    # изменяем ракурс камеры
+    camera.update(player)
+    # обновляем положение всех спрайтов
+    for sprite in all_sprites:
+        camera.apply(sprite)
     screen.fill(pygame.Color(0, 0, 0))
     tiles_group.draw(screen)
     player_group.draw(screen)
